@@ -1,0 +1,43 @@
+# Dockerfile for ConvoContentBuddy.UI.Web (Blazor WASM)
+# Multi-stage build for optimized image size
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+WORKDIR /src
+
+# Copy solution and project files
+COPY ConvoContentBuddy.sln ./
+COPY global.json ./
+COPY src/ConvoContentBuddy.UI.Web/ConvoContentBuddy.UI.Web.csproj ./src/ConvoContentBuddy.UI.Web/
+COPY src/ConvoContentBuddy.ServiceDefaults/ConvoContentBuddy.ServiceDefaults.csproj ./src/ConvoContentBuddy.ServiceDefaults/
+
+# Restore dependencies
+RUN dotnet restore src/ConvoContentBuddy.UI.Web/ConvoContentBuddy.UI.Web.csproj
+
+# Copy source code
+COPY src/ConvoContentBuddy.UI.Web/. ./src/ConvoContentBuddy.UI.Web/
+COPY src/ConvoContentBuddy.ServiceDefaults/. ./src/ConvoContentBuddy.ServiceDefaults/
+
+# Build and publish
+WORKDIR /src/src/ConvoContentBuddy.UI.Web
+RUN dotnet publish ConvoContentBuddy.UI.Web.csproj -c Release -o /app/publish --no-restore
+
+# Runtime stage - Nginx for serving static files
+FROM nginx:alpine AS runtime
+WORKDIR /app
+
+# Copy published Blazor WASM files
+COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+
+# Expose port
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget -q --spider --tries=1 http://localhost/ || exit 1
+
+# Entry point
+CMD ["nginx", "-g", "daemon off;"]

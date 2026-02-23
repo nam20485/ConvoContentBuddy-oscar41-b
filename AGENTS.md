@@ -220,7 +220,12 @@ Agent Readiness makes this project self-correcting. You must run the same verifi
 
 ### Your Verification Protocol
 
-After making any code changes, you must execute these steps before marking any task complete:
+For any non-trivial code change, this protocol is mandatory and must be completed before marking any task complete.
+Treat this as a hard gate, not optional guidance.
+
+Non-trivial changes include (at minimum): logic changes, behavior changes, refactors, dependency updates, configuration changes that affect runtime/build/test behavior, and any multi-file edits.
+
+After making code changes that meet the non-trivial threshold, you must execute these steps:
 
 1. **Run the full verification suite** (all commands in the table below).
 2. **Fix every failure** — do not skip, suppress, or work around errors.
@@ -267,3 +272,28 @@ Pass `--no-build` after a successful `dotnet build` to avoid redundant compilati
 | Integration tests | *(add when Aspire test projects exist)* | When explicitly required |
 
 > **Rule:** Every time a new CI workflow is added to `.github/workflows/`, add its equivalent local command to this table.
+
+## Post-Commit CI/CD Monitoring Protocol
+
+After every commit and push, actively monitor CI/CD runs until the latest commit is green:
+
+1. Start monitoring immediately after push.
+2. Monitor in a separate terminal session or background process so implementation work continues in parallel.
+3. Poll workflow status on a short interval (for example, every 60-120 seconds) until completion.
+4. If any workflow fails, stop new feature work and immediately triage the failure.
+5. Fix the root cause, re-run local verification, push the fix, and continue this loop until workflows pass.
+6. Do not mark work complete while the latest relevant CI/CD checks are failing.
+
+Suggested GitHub CLI patterns:
+
+    gh run list --limit 5
+    gh run watch <run-id>
+    gh run view <run-id> --log-failed
+
+## CI/CD Pipeline Speed Policy
+
+Design workflows in two lanes so readiness feedback is fast:
+
+1. Fast readiness lane (blocking): build, lint/format, unit tests. Keep this lane optimized for quick feedback and merge readiness.
+2. Extended validation lane (can be slower): long-running integration suites, deep security scans, dependency audits, performance or other non-readiness scans.
+3. When adding or editing workflows, protect the fast lane from unnecessary slow steps.
