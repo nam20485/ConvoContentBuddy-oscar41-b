@@ -1,0 +1,50 @@
+# Dockerfile for ConvoContentBuddy.API.Brain
+# Multi-stage build for optimized image size
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+WORKDIR /src
+
+# Copy solution and project files
+COPY ConvoContentBuddy.sln ./
+COPY global.json ./
+COPY src/ConvoContentBuddy.API.Brain/ConvoContentBuddy.API.Brain.csproj ./src/ConvoContentBuddy.API.Brain/
+COPY src/ConvoContentBuddy.ServiceDefaults/ConvoContentBuddy.ServiceDefaults.csproj ./src/ConvoContentBuddy.ServiceDefaults/
+
+# Restore dependencies
+RUN dotnet restore src/ConvoContentBuddy.API.Brain/ConvoContentBuddy.API.Brain.csproj
+
+# Copy source code
+COPY src/ConvoContentBuddy.API.Brain/. ./src/ConvoContentBuddy.API.Brain/
+COPY src/ConvoContentBuddy.ServiceDefaults/. ./src/ConvoContentBuddy.ServiceDefaults/
+
+# Build and publish
+WORKDIR /src/src/ConvoContentBuddy.API.Brain
+RUN dotnet publish ConvoContentBuddy.API.Brain.csproj -c Release -o /app/publish --no-restore
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
+WORKDIR /app
+
+# Create non-root user for security
+RUN adduser --disabled-password --gecos '' appuser
+
+# Copy published application
+COPY --from=build /app/publish .
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Expose port
+EXPOSE 8080
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Entry point
+ENTRYPOINT ["dotnet", "ConvoContentBuddy.API.Brain.dll"]
