@@ -146,9 +146,9 @@ ConvoContentBuddy is an autonomous background listener designed to assist users 
 ## Package Dependencies Summary
 
 ```xml
-<!-- Core -->
-<PackageReference Include="Microsoft.AspNetCore.App" Version="10.0.0" />
-<PackageReference Include="Microsoft.NET.Sdk.Web" Version="10.0.0" />
+<!-- Core framework references are declared in the SDK, not as PackageReference items.
+     Web projects use Sdk="Microsoft.NET.Sdk.Web" and inherit Microsoft.AspNetCore.App
+     as a framework reference automatically. -->
 
 <!-- Aspire -->
 <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
@@ -176,8 +176,12 @@ ConvoContentBuddy is an autonomous background listener designed to assist users 
 ```json
 {
   "sdk": {
-    "version": "10.0.0",
-    "rollForward": "latestFeature"
+    "version": "10.0.100",
+    "rollForward": "latestMinor",
+    "allowPrerelease": false
+  },
+  "msbuild-sdks": {
+    "Microsoft.NET.Sdk.WebAssembly": "10.0.100"
   }
 }
 ```

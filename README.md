@@ -85,13 +85,12 @@ This will start:
 
 ```bash
 # Start all infrastructure services
-cd docker
-docker-compose up -d
+cd docker && docker-compose up -d && cd ..
 
-# Build and run the API
+# Build and run the API (run from the repository root)
 dotnet run --project src/ConvoContentBuddy.API.Brain
 
-# Build and run the UI
+# Build and run the UI (run from the repository root)
 dotnet run --project src/ConvoContentBuddy.UI.Web
 ```
 
@@ -104,7 +103,7 @@ Set the following environment variables:
 GEMINI_API_KEY=your-gemini-api-key
 
 # Database connections (auto-configured in Aspire)
-ConnectionStrings__postgres=Host=localhost;Port=5432;Database=convocontentbuddy;Username=postgres;Password=postgres
+ConnectionStrings__postgres=Host=localhost;Port=5432;Database=convocontentbuddy;Username=convocontentbuddy;Password=convocontentbuddy
 QDRANT__HOST=localhost
 QDRANT__PORT=6334
 REDIS__HOST=localhost
